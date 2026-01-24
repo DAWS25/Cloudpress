@@ -1,0 +1,19 @@
+{
+  "name": "CloudPress DevContainer (Devbox)",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "overrideCommand": false,
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/devcontainers-community/features/direnv:1": {},
+    "ghcr.io/devcontainers/features/aws-cli:1": {}
+  },
+  "postCreateCommand": "./scripts/postCreateCommand.sh",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": ["aws-scripting-guy.cform"]
+    }
+  },
+  "remoteUser": "vscode"
+}

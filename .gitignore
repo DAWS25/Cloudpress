@@ -1,0 +1,61 @@
+# ===============================
+# Node / React / Vite
+# ===============================
+node_modules/
+dist/
+dist-ssr/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===============================
+# Devbox / Nix
+# ===============================
+.devbox/
+.nix-*
+result
+result-*
+
+# ===============================
+# VS Code
+# ===============================
+.vscode/
+!.vscode/extensions.json
+
+# ===============================
+# OS / WSL
+# ===============================
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# ===============================
+# Environment / Secrets
+# ===============================
+.env
+.env.*
+!.env.example
+
+# ===============================
+# CloudFormation (local only)
+# ===============================
+*.out.yaml
+*.out.yml
+*.json.tmp
+
+# ===============================
+# Terraform (caso use no futuro)
+# ===============================
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# ===============================
+# Coverage / Test
+# ===============================
+coverage/
