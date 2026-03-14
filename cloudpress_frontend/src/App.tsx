@@ -6,6 +6,7 @@ import Articles from './components/Articles'
 import Videos from './components/Videos'
 import Sponsored from './components/Sponsored'
 import LoginBox from './components/LoginBox'
+import UploadBox from './components/UploadBox'
 import Footer from './components/Footer'
 import { exchangeCodeForToken, getUser } from './auth'
 
@@ -44,6 +45,7 @@ function App() {
         <aside>
           <Sponsored />
           <LoginBox user={user} setUser={setUser} />
+          <UploadBox user={user} />
         </aside>
       </main>
 

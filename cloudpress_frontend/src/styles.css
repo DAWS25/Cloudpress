@@ -91,6 +91,39 @@ a {
   margin-top: 0.5rem;
 }
 
+.upload p {
+  margin-bottom: 0.8rem;
+}
+
+.upload input {
+  width: 100%;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem;
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+}
+
+.upload button {
+  width: 100%;
+  background: var(--orange);
+  border: none;
+  padding: 0.7rem;
+  margin-top: 0.5rem;
+  cursor: pointer;
+}
+
+.upload button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-status {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
 .footer {
   text-align: center;
   padding: 2rem;

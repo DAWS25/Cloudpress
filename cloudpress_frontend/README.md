@@ -76,3 +76,24 @@ Você verá algo como:
 Local: http://localhost:5173/
 Network: http://172.21.198.71:5173
 ```
+
+## 3️⃣ Realizar build da aplicação front
+```
+cd cloudpress_frontend/
+npm run build
+```
+
+## 🔐 Variáveis de ambiente
+
+Crie um arquivo `.env` em `cloudpress_frontend/` com base em `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Campos necessários:
+
+- `VITE_COGNITO_DOMAIN`
+- `VITE_COGNITO_CLIENT_ID`
+- `VITE_COGNITO_REDIRECT_URI`
+- `VITE_UPLOAD_API_URL` (base URL da stack `upload-api`)
