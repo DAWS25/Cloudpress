@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudPress - API de upload markdown autenticada por Cognito
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cloudpress
+
+  Environment:
+    Type: String
+    Default: dev
+
+  LambdaCodeS3Bucket:
+    Type: String
+    Description: Bucket com o artefato zip do Lambda
+
+  LambdaCodeS3Key:
+    Type: String
+    Description: Chave (path) do artefato zip do Lambda
+
+Resources:
+  UploadFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${Environment}-upload-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-${Environment}-upload-lambda-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutBucketCors
+                Resource: !Sub "arn:aws:s3:::${ProjectName}-${Environment}-*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${ProjectName}-${Environment}-*/*"
+
+  UploadFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-upload-markdown"
+      Runtime: python3.12
+      Handler: upload.handler
+      Role: !GetAtt UploadFunctionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          PROJECT_NAME: !Ref ProjectName
+          ENVIRONMENT: !Ref Environment
+      Code:
+        S3Bucket: !Ref LambdaCodeS3Bucket
+        S3Key: !Ref LambdaCodeS3Key
+Outputs:
+  LambdaFunctionArn:
+    Description: ARN da função Lambda
+    Value: !GetAtt UploadFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-lambda-arn"
