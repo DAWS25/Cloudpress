@@ -1,21 +1,23 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  CloudPress - Static SPA hosting using S3 and CloudFront
+  CloudPress - Bucket S3
 
 Parameters:
   ProjectName:
     Type: String
-    Default: cloudpress
+
   Environment:
     Type: String
-    Default: dev
+
+  ResourcePrefix:
+    Type: String
 
 Resources:
   StaticSiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub '${ProjectName}-${Environment}-frontend'
+      BucketName: !Sub '${ProjectName}-${Environment}-${ResourcePrefix}'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -35,14 +37,14 @@ Outputs:
     Description: S3 bucket name
     Value: !Ref StaticSiteBucket
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-bucket-name'
+      Name: !Sub '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-name'
   BucketArn:
     Description: ARN of the S3 bucket
     Value: !GetAtt StaticSiteBucket.Arn
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-bucket-arn'
+      Name: !Sub '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-arn'
   BucketRegionalDomainName:
     Description: Regional domain name of the bucket
     Value: !GetAtt StaticSiteBucket.RegionalDomainName
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-bucket-domain'
+      Name: !Sub '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-domain'

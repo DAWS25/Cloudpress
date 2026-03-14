@@ -5,13 +5,11 @@ Description: >
 Parameters:
   ProjectName:
     Type: String
-    Default: cloudpress
     Description: Project name used for resource naming
-
+  
   Environment:
     Type: String
-    Description: Deployment environment (dev, stage, prod)
-
+  
 Resources:
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -51,11 +49,17 @@ Resources:
         - profile
       AllowedOAuthFlowsUserPoolClient: true
       CallbackURLs:
-        - http://d3bkqhfl8c7rka.cloudfront.net
-        - https://d3bkqhfl8c7rka.cloudfront.net
+        - !Sub
+          - "https://${CloudFrontDomain}"
+          - CloudFrontDomain:
+              Fn::ImportValue:
+                Fn::Sub: "${ProjectName}-${Environment}-cloudfront-domain-name"
       LogoutURLs:
-        - http://d3bkqhfl8c7rka.cloudfront.net
-        - https://d3bkqhfl8c7rka.cloudfront.net
+        - !Sub
+          - "https://${CloudFrontDomain}"
+          - CloudFrontDomain:
+              Fn::ImportValue:
+                Fn::Sub: "${ProjectName}-${Environment}-cloudfront-domain-name"
       SupportedIdentityProviders:
         - COGNITO
       PreventUserExistenceErrors: ENABLED
@@ -84,3 +88,9 @@ Outputs:
     Value: !Sub "https://${ProjectName}-${Environment}-auth.auth.${AWS::Region}.amazoncognito.com"
     Export:
       Name: !Sub "${ProjectName}-${Environment}-cognito-domain"
+
+  CognitoUserPoolIssuer:
+    Description: Cognito User Pool JWT issuer URL
+    Value: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-cognito-user-pool-issuer"
