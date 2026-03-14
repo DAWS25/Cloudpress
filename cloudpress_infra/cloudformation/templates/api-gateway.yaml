@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudPress - API de upload markdown autenticada por Cognito
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cloudpress
+
+  Environment:
+    Type: String
+    Default: dev
+
+  AllowedOrigin:
+    Type: String
+    Default: "*"
+    Description: "Origem permitida para CORS (ex: https://xxxxx.cloudfront.net)"
+
+Resources: 
+  UploadHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub "${ProjectName}-${Environment}-upload-api"
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods:
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - authorization
+          - content-type
+        MaxAge: 300
+
+  UploadJwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref UploadHttpApi
+      AuthorizerType: JWT
+      IdentitySource:
+        - "$request.header.Authorization"
+      JwtConfiguration:
+        Audience:
+          - Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-cognito-user-pool-client-id"
+        Issuer:
+          Fn::ImportValue:
+            Fn::Sub: "${ProjectName}-${Environment}-cognito-user-pool-issuer"
+      Name: !Sub "${ProjectName}-${Environment}-upload-jwt-authorizer"
+
+  UploadApiDefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref UploadHttpApi
+      StageName: "$default"
+      AutoDeploy: true  
+
+Outputs:
+  UploadApiBaseUrl:
+    Description: Base URL da API de upload
+    Value: !Sub "https://${UploadHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-api-url"
+
+  UploadApiId:
+    Description: ID do API Gateway HTTP
+    Value: !Ref UploadHttpApi
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-api-id"
+
+  UploadJwtAuthorizerId:
+    Description: ID do authorizer JWT do API Gateway HTTP
+    Value: !Ref UploadJwtAuthorizer
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-authorizer-id"
