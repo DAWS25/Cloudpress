@@ -19,7 +19,7 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri:
         Fn::ImportValue:
-          Fn::Sub: "${ProjectName}-${Environment}-upload-lambda-arn"
+          Fn::Sub: "${ProjectName}-${Environment}-upload-lambda-alias-arn"
       PayloadFormatVersion: "2.0"
 
   UploadApiRoute:
@@ -41,7 +41,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName:
         Fn::ImportValue:
-          Fn::Sub: "${ProjectName}-${Environment}-upload-lambda-arn"
+          Fn::Sub: "${ProjectName}-${Environment}-upload-lambda-alias-arn"
       Principal: apigateway.amazonaws.com
       SourceArn:
         Fn::Sub:
