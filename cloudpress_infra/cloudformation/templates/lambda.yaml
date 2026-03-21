@@ -54,6 +54,12 @@ Resources:
                 Action:
                   - s3:PutObject
                 Resource: !Sub "arn:aws:s3:::${ProjectName}-${Environment}-*/*"
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  Fn::ImportValue:
+                    Fn::Sub: "${ProjectName}-${Environment}-sqs-queue-arn"
 
   UploadFunction:
     Type: AWS::Lambda::Function
@@ -67,6 +73,9 @@ Resources:
         Variables:
           PROJECT_NAME: !Ref ProjectName
           ENVIRONMENT: !Ref Environment
+          UPLOAD_QUEUE_URL:
+            Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-sqs-queue-url"
       Code:
         S3Bucket: !Ref LambdaCodeS3Bucket
         S3Key: !Ref LambdaCodeS3Key
