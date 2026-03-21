@@ -104,6 +104,28 @@ a {
   color: white;
 }
 
+.upload textarea {
+  width: 100%;
+  margin-bottom: 0.8rem;
+  padding: 0.6rem;
+  background: #111;
+  border: 1px solid #333;
+  color: white;
+  resize: vertical;
+}
+
+.upload-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.upload-checkbox input {
+  width: auto;
+  margin-bottom: 0;
+}
+
 .upload button {
   width: 100%;
   background: var(--orange);

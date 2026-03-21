@@ -1,11 +1,19 @@
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL as string | undefined
 
+export type UploadRequest = {
+  title: string
+  description: string
+  isSponsored: boolean
+}
+
 type UploadResponse = {
   message: string
   bucket: string
   key: string
   uploadUrl: string
   expiresIn: number
+  contentId: string
+  contentCategory: 'markdown' | 'video'
 }
 
 function ensureUploadApiUrl() {
@@ -16,7 +24,10 @@ function ensureUploadApiUrl() {
   return UPLOAD_API_URL
 }
 
-export async function uploadMarkdown(file: File): Promise<UploadResponse> {
+export async function uploadContent(
+  file: File,
+  metadata: UploadRequest,
+): Promise<UploadResponse> {
   const uploadApiUrl = ensureUploadApiUrl()
 
   const idToken = sessionStorage.getItem('id_token')
@@ -33,7 +44,10 @@ export async function uploadMarkdown(file: File): Promise<UploadResponse> {
     },
     body: JSON.stringify({
       filename: file.name,
-      contentType: file.type || 'text/markdown',
+      contentType: file.type || 'application/octet-stream',
+      title: metadata.title,
+      description: metadata.description,
+      isSponsored: metadata.isSponsored,
     }),
   })
 
