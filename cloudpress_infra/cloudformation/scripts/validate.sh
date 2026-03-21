@@ -11,6 +11,8 @@ TEMPLATES=(
   "$TEMPLATE_DIR/s3.yaml"
   "$TEMPLATE_DIR/cloudfront.yaml"
   "$TEMPLATE_DIR/cognito.yaml"
+  "$TEMPLATE_DIR/sqs.yaml"
+  "$TEMPLATE_DIR/dynamodb.yaml"
   "$TEMPLATE_DIR/lambda.yaml"
   "$TEMPLATE_DIR/api-gateway.yaml"
   "$TEMPLATE_DIR/api-lambda-binding.yaml"

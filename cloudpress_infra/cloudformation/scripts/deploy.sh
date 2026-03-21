@@ -6,6 +6,9 @@ ENVIRONMENT="dev"
 REGION="us-east-1"
 LAMBDA_SOURCE_DIR="../cloudpress_backend/lambdas/upload_markdown"
 LAMBDA_ZIP_FILE="/tmp/${PROJECT_NAME}-${ENVIRONMENT}-upload-markdown.zip"
+UPLOAD_QUEUE_NAME="${PROJECT_NAME}-${ENVIRONMENT}-upload-metadata-queue"
+UPLOAD_DLQ_NAME="${PROJECT_NAME}-${ENVIRONMENT}-upload-metadata-dlq"
+UPLOAD_TABLE_NAME="${PROJECT_NAME}-${ENVIRONMENT}-upload-metadata"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
@@ -71,6 +74,46 @@ aws cloudformation deploy \
   --capabilities CAPABILITY_NAMED_IAM
 
 echo "✅ Stack Cognito finalizada"
+
+# ===============================
+# Stack SQS
+# ===============================
+echo "📨 Criando/Atualizando stack SQS..."
+
+aws cloudformation deploy \
+  --region $REGION \
+  --stack-name ${PROJECT_NAME}-${ENVIRONMENT}-sqs \
+  --template-file ${TEMPLATE_DIR}/sqs.yaml \
+  --parameter-overrides \
+    ProjectName=$PROJECT_NAME \
+    Environment=$ENVIRONMENT \
+    QueueName=$UPLOAD_QUEUE_NAME \
+    DeadLetterQueueName=$UPLOAD_DLQ_NAME \
+    VisibilityTimeout=60 \
+    MessageRetentionSeconds=345600 \
+    ReceiveMessageWaitTimeSeconds=20 \
+    DelaySeconds=0 \
+    MaxReceiveCount=5 \
+  --capabilities CAPABILITY_NAMED_IAM
+
+echo "✅ Stack SQS finalizada"
+
+# ===============================
+# Stack DynamoDB
+# ===============================
+echo "🗄️ Criando/Atualizando stack DynamoDB..."
+
+aws cloudformation deploy \
+  --region $REGION \
+  --stack-name ${PROJECT_NAME}-${ENVIRONMENT}-dynamodb \
+  --template-file ${TEMPLATE_DIR}/dynamodb.yaml \
+  --parameter-overrides \
+    ProjectName=$PROJECT_NAME \
+    Environment=$ENVIRONMENT \
+    TableName=$UPLOAD_TABLE_NAME \
+  --capabilities CAPABILITY_NAMED_IAM
+
+echo "✅ Stack DynamoDB finalizada"
 
 # ===============================
 # Stack Lambda

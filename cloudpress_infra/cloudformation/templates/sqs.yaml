@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudPress - Filas SQS para ingestao de metadados de uploads
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Nome do projeto usado na composição dos recursos
+
+  Environment:
+    Type: String
+    Description: Ambiente do deploy
+
+  QueueName:
+    Type: String
+    Description: Nome da fila principal
+
+  DeadLetterQueueName:
+    Type: String
+    Description: Nome da fila de mensagens mortas
+
+  VisibilityTimeout:
+    Type: Number
+    Default: 60
+    MinValue: 0
+    MaxValue: 43200
+    Description: Tempo de invisibilidade da mensagem em segundos
+
+  MessageRetentionSeconds:
+    Type: Number
+    Default: 345600
+    MinValue: 60
+    MaxValue: 1209600
+    Description: Tempo de retencao das mensagens em segundos
+
+  ReceiveMessageWaitTimeSeconds:
+    Type: Number
+    Default: 20
+    MinValue: 0
+    MaxValue: 20
+    Description: Long polling da fila principal em segundos
+
+  DelaySeconds:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 900
+    Description: Delay padrao para entrega das mensagens
+
+  MaxReceiveCount:
+    Type: Number
+    Default: 5
+    MinValue: 1
+    Description: Quantidade maxima de tentativas antes da DLQ
+
+Resources:
+  UploadMetadataDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref DeadLetterQueueName
+      MessageRetentionPeriod: !Ref MessageRetentionSeconds
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: upload-metadata-dlq
+
+  UploadMetadataQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref QueueName
+      DelaySeconds: !Ref DelaySeconds
+      MessageRetentionPeriod: !Ref MessageRetentionSeconds
+      ReceiveMessageWaitTimeSeconds: !Ref ReceiveMessageWaitTimeSeconds
+      VisibilityTimeout: !Ref VisibilityTimeout
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt UploadMetadataDeadLetterQueue.Arn
+        maxReceiveCount: !Ref MaxReceiveCount
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: upload-metadata
+
+Outputs:
+  UploadQueueName:
+    Description: Nome da fila principal
+    Value: !GetAtt UploadMetadataQueue.QueueName
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-queue-name"
+
+  UploadQueueUrl:
+    Description: URL da fila principal
+    Value: !Ref UploadMetadataQueue
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-queue-url"
+
+  UploadQueueArn:
+    Description: ARN da fila principal
+    Value: !GetAtt UploadMetadataQueue.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-queue-arn"
+
+  DeadLetterQueueName:
+    Description: Nome da fila DLQ
+    Value: !GetAtt UploadMetadataDeadLetterQueue.QueueName
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-dlq-name"
+
+  DeadLetterQueueUrl:
+    Description: URL da fila DLQ
+    Value: !Ref UploadMetadataDeadLetterQueue
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-dlq-url"
+
+  DeadLetterQueueArn:
+    Description: ARN da fila DLQ
+    Value: !GetAtt UploadMetadataDeadLetterQueue.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-sqs-dlq-arn"
