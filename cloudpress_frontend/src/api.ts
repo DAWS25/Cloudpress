@@ -16,6 +16,19 @@ type UploadResponse = {
   contentCategory: 'markdown' | 'video'
 }
 
+function resolveContentType(file: File) {
+  if (file.type) {
+    return file.type
+  }
+
+  const filename = file.name.toLowerCase()
+  if (filename.endsWith('.md') || filename.endsWith('.markdown')) {
+    return 'text/markdown'
+  }
+
+  return 'application/octet-stream'
+}
+
 function ensureUploadApiUrl() {
   if (!UPLOAD_API_URL) {
     throw new Error('VITE_UPLOAD_API_URL não configurada no frontend')
@@ -29,6 +42,7 @@ export async function uploadContent(
   metadata: UploadRequest,
 ): Promise<UploadResponse> {
   const uploadApiUrl = ensureUploadApiUrl()
+  const contentType = resolveContentType(file)
 
   const idToken = sessionStorage.getItem('id_token')
   if (!idToken) {
@@ -44,7 +58,7 @@ export async function uploadContent(
     },
     body: JSON.stringify({
       filename: file.name,
-      contentType: file.type || 'application/octet-stream',
+      contentType,
       title: metadata.title,
       description: metadata.description,
       isSponsored: metadata.isSponsored,
@@ -62,7 +76,7 @@ export async function uploadContent(
   const uploadResponse = await fetch(uploadData.uploadUrl, {
     method: 'PUT',
     headers: {
-      'Content-Type': file.type || 'text/markdown',
+      'Content-Type': contentType,
     },
     body: file,
   })
