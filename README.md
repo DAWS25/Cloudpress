@@ -52,6 +52,11 @@ O projeto CloudPress será evoluído de forma incremental, incluindo:
 - Frontend (React)
 - APIs REST
 
+### 🔐 Autenticação
+O Cloudpress utiliza Amazon Cognito para gerenciamento de identidade, garantindo segurança, escalabilidade e integração nativa com serviços AWS.
+A infraestrutura é provisionada via CloudFormation, seguindo boas práticas de infraestrutura como código.
+
+
 > ⚠️ As tecnologias podem mudar conforme a evolução do laboratório e dos estudos.
 
 ---

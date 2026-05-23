@@ -1,4 +1,11 @@
-export default function Header() {
+import { login, logout } from '../auth'
+
+type Props = {
+  user: string | null
+  setUser: (user: string | null) => void
+}
+
+export default function Header({ user, setUser }: Props) {
   return (
     <header className="header">
       <h1>
@@ -9,7 +16,24 @@ export default function Header() {
         <a href="#">Artigos</a>
         <a href="#">Vídeos</a>
         <a href="#">Galeria</a>
-        <a href="#">Login</a>
+
+        {!user ? (
+          <a href="#" onClick={login}>Login</a>
+        ) : (
+          <>
+            <span style={{ marginLeft: '1rem' }}>👤 {user}</span>
+            <a
+              href="#"
+              onClick={() => {
+                logout()
+                setUser(null)
+              }}
+              style={{ marginLeft: '1rem' }}
+            >
+              Logout
+            </a>
+          </>
+        )}
       </nav>
     </header>
   )

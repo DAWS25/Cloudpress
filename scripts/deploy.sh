@@ -39,4 +39,20 @@ aws cloudformation deploy \
 
 echo "✅ Stack CloudFront finalizada"
 
+# ===============================
+# Stack Cognito
+# ===============================
+echo "🔐 Criando/Atualizando stack Cognito..."
+
+aws cloudformation deploy \
+  --region $REGION \
+  --stack-name ${PROJECT_NAME}-${ENVIRONMENT}-cognito \
+  --template-file ../cloudpress_infra/cloudformation/templates/cognito.yaml \
+  --parameter-overrides \
+    ProjectName=$PROJECT_NAME \
+    Environment=$ENVIRONMENT \
+  --capabilities CAPABILITY_NAMED_IAM
+
+echo "✅ Stack Cognito finalizada"
+
 echo "🎉 Deploy concluído com sucesso"
