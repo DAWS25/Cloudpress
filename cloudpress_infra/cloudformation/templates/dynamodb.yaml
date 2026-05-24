@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudPress - Tabela DynamoDB para metadados dos uploads processados,
+  incluindo titulo, descricao, tipo do conteudo e indicador de patrocinio
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: Nome do projeto usado na composição dos recursos
+
+  Environment:
+    Type: String
+    Description: Ambiente do deploy
+
+  TableName:
+    Type: String
+    Description: Nome da tabela DynamoDB
+
+Resources:
+  UploadMetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      BillingMode: PAY_PER_REQUEST
+      # DynamoDB so exige declaracao explicita para atributos usados em chave ou indice.
+      # Campos como Title, Description, FileExtension, ContentType e IsSponsored
+      # podem ser gravados livremente pelos produtores/consumidores da fila.
+      AttributeDefinitions:
+        - AttributeName: ContentId
+          AttributeType: S
+        - AttributeName: UserSub
+          AttributeType: S
+        - AttributeName: CreatedAt
+          AttributeType: S
+        - AttributeName: SponsoredStatus
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ContentId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: user-sub-created-at-index
+          KeySchema:
+            - AttributeName: UserSub
+              KeyType: HASH
+            - AttributeName: CreatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: sponsored-status-created-at-index
+          KeySchema:
+            - AttributeName: SponsoredStatus
+              KeyType: HASH
+            - AttributeName: CreatedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: upload-metadata
+
+Outputs:
+  DynamoDBTableName:
+    Description: Nome da tabela DynamoDB
+    Value: !Ref UploadMetadataTable
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-dynamodb-table-name"
+
+  DynamoDBTableArn:
+    Description: ARN da tabela DynamoDB
+    Value: !GetAtt UploadMetadataTable.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-dynamodb-table-arn"
+
+  UserUploadsIndexName:
+    Description: GSI para listagem de uploads por usuario
+    Value: user-sub-created-at-index
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-dynamodb-user-uploads-index"
+
+  SponsoredContentIndexName:
+    Description: GSI para consulta de conteudos patrocinados por data
+    Value: sponsored-status-created-at-index
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-dynamodb-sponsored-index"

@@ -15,12 +15,18 @@ cloudformation/
 ├── templates/
 │ ├── s3.yaml
 │ ├── cloudfront.yaml
-│ └── acm.yaml
+│ ├── cognito.yaml
+│ └── upload-api.yaml
 └── README.md
 
 
 ### 📁 templates/
 Templates reutilizáveis que definem recursos específicos da AWS.
+
+### 🧠 Código Lambda
+As funções Lambda versionadas ficam em:
+
+`cloudpress_backend/lambdas/`
 
 ---
 

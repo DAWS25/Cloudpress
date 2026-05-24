@@ -1,0 +1,169 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  CloudPress - API de upload markdown autenticada por Cognito
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: cloudpress
+
+  Environment:
+    Type: String
+    Default: dev
+
+  LambdaCodeS3Bucket:
+    Type: String
+    Description: Bucket com o artefato zip do Lambda
+
+  LambdaCodeS3Key:
+    Type: String
+    Description: Chave (path) do artefato zip do Lambda
+
+  LambdaCodeHash:
+    Type: String
+    Default: bootstrap
+    Description: Hash SHA256 do artefato zip para publicar novas versoes
+
+  LambdaAliasName:
+    Type: String
+    Default: live
+    Description: Alias estavel utilizado pelo API Gateway
+
+  LambdaDeploymentConfigName:
+    Type: String
+    Default: CodeDeployDefault.LambdaAllAtOnce
+    Description: Estrategia de traffic shifting do CodeDeploy para a Lambda
+
+Resources:
+  UploadFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${Environment}-upload-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub "${ProjectName}-${Environment}-upload-lambda-policy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "arn:aws:logs:*:*:*"
+              - Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:PutBucketCors
+                Resource: !Sub "arn:aws:s3:::${ProjectName}-${Environment}-*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${ProjectName}-${Environment}-*/*"
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource:
+                  Fn::ImportValue:
+                    Fn::Sub: "${ProjectName}-${Environment}-sqs-queue-arn"
+
+  UploadFunctionCodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-${Environment}-upload-lambda-codedeploy-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codedeploy.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRoleForLambda
+
+  UploadFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${Environment}-upload-markdown"
+      Runtime: python3.12
+      Handler: upload.handler
+      Role: !GetAtt UploadFunctionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          PROJECT_NAME: !Ref ProjectName
+          ENVIRONMENT: !Ref Environment
+          UPLOAD_QUEUE_URL:
+            Fn::ImportValue:
+              Fn::Sub: "${ProjectName}-${Environment}-sqs-queue-url"
+      Code:
+        S3Bucket: !Ref LambdaCodeS3Bucket
+        S3Key: !Ref LambdaCodeS3Key
+
+  UploadFunctionVersion:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref UploadFunction
+      CodeSha256: !Ref LambdaCodeHash
+      Description: !Sub "Artifact ${LambdaCodeS3Key} (${LambdaCodeHash})"
+
+  UploadFunctionCodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub "${ProjectName}-${Environment}-upload-lambda-app"
+      ComputePlatform: Lambda
+
+  UploadFunctionCodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref UploadFunctionCodeDeployApplication
+      DeploymentGroupName: !Sub "${ProjectName}-${Environment}-upload-lambda-dg"
+      DeploymentConfigName: !Ref LambdaDeploymentConfigName
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      ServiceRoleArn: !GetAtt UploadFunctionCodeDeployRole.Arn
+
+  UploadFunctionAlias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref UploadFunction
+      FunctionVersion: !GetAtt UploadFunctionVersion.Version
+      Name: !Ref LambdaAliasName
+    UpdatePolicy:
+      CodeDeployLambdaAliasUpdate:
+        ApplicationName: !Ref UploadFunctionCodeDeployApplication
+        DeploymentGroupName: !Ref UploadFunctionCodeDeployDeploymentGroup
+Outputs:
+  LambdaFunctionArn:
+    Description: ARN da função Lambda
+    Value: !GetAtt UploadFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-lambda-arn"
+
+  LambdaAliasArn:
+    Description: ARN do alias estavel da funcao Lambda
+    Value: !Ref UploadFunctionAlias
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-lambda-alias-arn"
+
+  LambdaAliasName:
+    Description: Nome do alias estavel da funcao Lambda
+    Value: !Ref LambdaAliasName
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-lambda-alias-name"
+
+  LambdaDeploymentGroupName:
+    Description: Nome do deployment group do CodeDeploy para a Lambda
+    Value: !Ref UploadFunctionCodeDeployDeploymentGroup
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-upload-lambda-deployment-group"

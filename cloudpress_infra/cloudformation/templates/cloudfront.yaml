@@ -7,10 +7,13 @@ Description: >
 Parameters:
   ProjectName:
     Type: String
-    Default: cloudpress
+    
   Environment:
     Type: String
-    Default: dev
+
+  ResourcePrefix:
+    Type: String
+    
 #   DomainName:
 #     Type: String
 #     Default: ''
@@ -38,7 +41,7 @@ Resources:
         Origins:
           - Id: S3Origin
             DomainName: !ImportValue
-              Fn::Sub: '${ProjectName}-${Environment}-bucket-domain'
+              Fn::Sub: '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-domain'
             S3OriginConfig: {}
             OriginAccessControlId: !Ref CloudFrontOAC
         DefaultCacheBehavior:
@@ -68,7 +71,7 @@ Resources:
     Type: AWS::S3::BucketPolicy
     Properties:
       Bucket: !ImportValue
-        Fn::Sub: '${ProjectName}-${Environment}-bucket-name'
+        Fn::Sub: '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-name'
       PolicyDocument:
         Statement:
           - Effect: Allow
@@ -78,13 +81,15 @@ Resources:
             Resource: !Sub
               - '${BucketArn}/*'
               - BucketArn: !ImportValue
-                  Fn::Sub: '${ProjectName}-${Environment}-bucket-arn'
+                  Fn::Sub: '${ProjectName}-${Environment}-${ResourcePrefix}-bucket-arn'
             Condition:
               StringEquals:
-                AWS:SourceArn: !Sub >
+                AWS:SourceArn: !Sub |-
                   arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFrontDistribution}
 
 Outputs:
   CloudFrontDomainName:
     Description: CloudFront distribution domain
     Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub "${ProjectName}-${Environment}-cloudfront-domain-name"
